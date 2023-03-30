@@ -100,6 +100,10 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 			var fullPath = req.URL.Path
 			var apiPaths = strings.Split(fullPath, "/")[1:]
 			var apiPath = strings.Join(apiPaths, "/")
+			req.URL.Path = apiPath
+			if req.URL.RawPath != "" {
+				req.URL.RawPath = apiPath
+			}
 			var peerCert = request.TLS.PeerCertificates[0]
 			fromServiceCertInfo, err := trust_center.NewServiceCertificate(peerCert)
 			if err != nil {
@@ -140,6 +144,8 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 				}
 				return
 			}
+			req.Host = targetServiceInfo.Host
+			req.URL.Host = targetServiceInfo.Host
 			var apiInfo = targetServiceInfo.GetAPIInfoByPath(apiPath)
 			if apiInfo == nil {
 				proxyError = &StatusError{
