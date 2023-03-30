@@ -26,7 +26,7 @@ const (
 
 type APIInfo struct {
 	FullPath string
-	Method   string
+	Methods  []string
 
 	SupportedIdentityType []string
 }
@@ -152,6 +152,14 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 					error:      errors.Errorf("api with path:%s does not exist", apiPath),
 					StatusCode: http.StatusNotFound,
 					ErrorCode:  ErrCodeAPIPathNotFound,
+				}
+				return
+			}
+			if !lo.Contains(apiInfo.Methods, req.Method) {
+				proxyError = &StatusError{
+					error:      errors.Errorf("api method:%s does not exist", req.Method),
+					StatusCode: http.StatusNotFound,
+					ErrorCode:  ErrCodeAPIMethodNotFound,
 				}
 				return
 			}
