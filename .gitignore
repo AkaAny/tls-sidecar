@@ -1,0 +1,5 @@
+.idea
+*.key
+*.csr
+*.crt
+*.srl
