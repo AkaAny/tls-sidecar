@@ -1,6 +1,16 @@
 package tls_sidecar
 
-type Deployment struct {
+type DeployInfo struct {
+	ID string
 	//http path ->
-	Host string
+	Host             string
+	IDServiceInfoMap map[string]*ServiceInfo
+}
+
+func (x *DeployInfo) GetServiceInfo(serviceID string) *ServiceInfo {
+	serviceInfo, ok := x.IDServiceInfoMap[serviceID]
+	if !ok {
+		return nil
+	}
+	return serviceInfo
 }

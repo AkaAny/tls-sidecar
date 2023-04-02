@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"os"
 	"tls-sidecar/cmd/inbound"
+	"tls-sidecar/cmd/outbound"
 	"tls-sidecar/config"
 )
 
@@ -32,4 +33,8 @@ func main() {
 	inbound.Main(trustedDeployCerts,
 		serviceCert, serviceKey,
 		sidecarConfig.RPC.Inbound.ServiceIDHostMap)
+	var selfDeployCert = sidecarConfig.RPC.Outbound.SelfDeployCertificate.ReadAndParse()
+	outbound.Main(selfDeployCert,
+		serviceCert, serviceKey,
+		sidecarConfig.RPC.Outbound.DeployIDHostMap)
 }
