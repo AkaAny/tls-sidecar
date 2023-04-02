@@ -187,10 +187,20 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 				}
 				return
 			}
+			var identityType = IdentityTypeValueUnauthorized
+			var identityRawValue = ""
 			var authHeaderValue = request.Header.Get("Authorization")
-			var authHeaderParts = strings.Split(authHeaderValue, " ")
-			var identityType = authHeaderParts[0]
-			if !lo.Contains(apiInfo.SupportedIdentityType, identityType) {
+			if authHeaderValue != "" {
+				var authHeaderParts = strings.Split(authHeaderValue, " ")
+				identityType = authHeaderParts[0]
+				identityRawValue = authHeaderParts[1]
+			}
+			var supportedIdentityTypes = apiInfo.SupportedIdentityType
+			if len(supportedIdentityTypes) == 0 {
+				supportedIdentityTypes = append(supportedIdentityTypes,
+					IdentityTypeValueUnauthorized)
+			}
+			if !lo.Contains(supportedIdentityTypes, identityType) {
 				proxyError = &StatusError{
 					error:      errors.Errorf("unsupported identity type:%s", identityType),
 					StatusCode: http.StatusForbidden,
@@ -202,7 +212,7 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 			case "rpc":
 				break //入站证书是可信任的，直接放通
 			case "jwt":
-				var jwtTokenStr = authHeaderParts[1]
+				var jwtTokenStr = identityRawValue
 				jwtToken, err := jwt.ParseWithClaims(jwtTokenStr, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 					return fromServiceCertInfo.Certificate.PublicKey, nil
 				})
