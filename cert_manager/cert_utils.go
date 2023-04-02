@@ -22,6 +22,10 @@ func ReadSingleDerFromPEMFile(fileName string) []byte {
 	if err != nil {
 		panic(err)
 	}
+	return ReadSingleDerFromPEMData(fileData)
+}
+
+func ReadSingleDerFromPEMData(fileData []byte) []byte {
 	pemBlock, _ := pem.Decode(fileData)
 	return pemBlock.Bytes
 }
