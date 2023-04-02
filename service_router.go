@@ -45,17 +45,22 @@ func (s *ServiceInfo) GetAPIInfoByPath(fullPath string) *APIInfo {
 }
 
 type ServiceRouteHandler struct {
-	DeployID string
-
-	serviceIDHostTable map[string]*ServiceInfo
+	serviceIDInfoTable map[string]*ServiceInfo
 }
 
-func NewServiceRouteHandler(deployID string) {
-
+func NewServiceRouteHandler(serviceIDHostMap map[string]string) *ServiceRouteHandler {
+	//TODO: ask real service to report its api
+	var serviceIDInfoMap = lo.MapValues(serviceIDHostMap, func(host string, serviceID string) *ServiceInfo {
+		return &ServiceInfo{
+			//PathRouterInfoMap: nil,
+			Host: host,
+		}
+	})
+	return &ServiceRouteHandler{serviceIDInfoTable: serviceIDInfoMap}
 }
 
 func (s *ServiceRouteHandler) GetServiceInfoByServiceID(serviceID string) *ServiceInfo {
-	serviceInfo, ok := s.serviceIDHostTable[serviceID]
+	serviceInfo, ok := s.serviceIDInfoTable[serviceID]
 	if !ok {
 		return nil
 	}
@@ -81,6 +86,25 @@ type StatusError struct {
 	error
 	StatusCode int
 	ErrorCode  int
+}
+
+func (x *StatusError) AsHttpResponse() (*http.Response, error) {
+	var bodyBuffer = bytes.NewBuffer(nil)
+	if err := json.NewEncoder(bodyBuffer).Encode(map[string]any{
+		"message":   x.Error(),
+		"errorCode": x.ErrorCode,
+	}); err != nil {
+		return nil, errors.Wrap(err, "encode proxy error to json")
+	}
+	var responseHeader = http.Header{}
+	responseHeader.Set("Content-Type", "application/json")
+	//responseHeader.Set("Content-Length", fmt.Sprintf("%d", bodyBuffer.Len()))
+	return &http.Response{
+		StatusCode:    x.StatusCode,
+		Header:        responseHeader,
+		Body:          io.NopCloser(bodyBuffer),
+		ContentLength: int64(bodyBuffer.Len()),
+	}, nil
 }
 
 func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message netty.Message) {
@@ -217,22 +241,7 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 				if proxyError == nil {
 					return base.RoundTrip(request)
 				}
-				var bodyBuffer = bytes.NewBuffer(nil)
-				if err := json.NewEncoder(bodyBuffer).Encode(map[string]any{
-					"message":   proxyError.Error(),
-					"errorCode": proxyError.ErrorCode,
-				}); err != nil {
-					return nil, errors.Wrap(err, "encode proxy error to json")
-				}
-				var responseHeader = http.Header{}
-				responseHeader.Set("Content-Type", "application/json")
-				//responseHeader.Set("Content-Length", fmt.Sprintf("%d", bodyBuffer.Len()))
-				return &http.Response{
-					StatusCode:    proxyError.StatusCode,
-					Header:        responseHeader,
-					Body:          io.NopCloser(bodyBuffer),
-					ContentLength: int64(bodyBuffer.Len()),
-				}, nil
+				return proxyError.AsHttpResponse()
 			}),
 		FlushInterval:  0,
 		ErrorLog:       nil,
