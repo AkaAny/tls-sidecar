@@ -14,7 +14,8 @@ import (
 func Main(selfDeployCert *x509.Certificate,
 	serviceCert *x509.Certificate, serviceKey *rsa.PrivateKey,
 	deployIDHostMap map[string]string) {
-	fmt.Println("sidecar outbound starts working")
+	var serverPort = 30880
+	fmt.Println("sidecar outbound starts working on port:", serverPort)
 
 	var outboundWrapperHandler = tls_sidecar.NewTLSWrapperHandler(selfDeployCert,
 		serviceCert, serviceKey,
@@ -30,7 +31,7 @@ func Main(selfDeployCert *x509.Certificate,
 			AddLast(outboundWrapperHandler)
 	}
 	netty.NewBootstrap(netty.WithChildInitializer(setupCodec), netty.WithTransport(tcp.New())).
-		Listen("0.0.0.0:30080").Async(func(err error) {
+		Listen(fmt.Sprintf("tcp://localhost:%d", serverPort)).Async(func(err error) {
 		panic(errors.Wrap(err, "outbound bootstrap err"))
 	})
 }

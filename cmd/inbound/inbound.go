@@ -17,7 +17,8 @@ import (
 func Main(trustedDeployCerts []*x509.Certificate,
 	serviceCert *x509.Certificate, serviceKey *rsa.PrivateKey,
 	serviceHost string) {
-	fmt.Println("sidecar inbound starts working")
+	var serverPort = 30443
+	fmt.Println("sidecar inbound starts working on port:%d", serverPort)
 	var tlsCert = tls_sidecar.NewTLSCertificate(serviceKey, serviceCert)
 	//tlsCert, err := tls2.LoadX509KeyPair("rpc-service-company.crt", "rpc-service-company.key")
 	//if err != nil {
@@ -45,7 +46,7 @@ func Main(trustedDeployCerts []*x509.Certificate,
 			AddLast(inboundRouterHandler)
 	}
 	netty.NewBootstrap(netty.WithChildInitializer(setupCodec), netty.WithTransport(tls.New())).
-		Listen("0.0.0.0:30443", tls.WithOptions(&tls.Options{
+		Listen(fmt.Sprintf("0.0.0.0:%d", serverPort), tls.WithOptions(&tls.Options{
 			TLS: &tls2.Config{
 				Certificates:          []tls2.Certificate{tlsCert},
 				GetCertificate:        nil,
