@@ -14,7 +14,7 @@ import (
 func Main(selfDeployCert *x509.Certificate,
 	serviceCert *x509.Certificate, serviceKey *rsa.PrivateKey,
 	deployIDHostMap map[string]string) {
-	var serverPort = 30880
+	var serverPort = 30080
 	fmt.Println("sidecar outbound starts working on port:", serverPort)
 
 	var outboundWrapperHandler = tls_sidecar.NewTLSWrapperHandler(selfDeployCert,
