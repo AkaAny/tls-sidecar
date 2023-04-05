@@ -24,7 +24,7 @@ const (
 	FromServiceIDHeaderKey        = "X-From-Service-ID"
 )
 
-type APIInfo struct {
+type HttpAPIInfoLocal struct {
 	FullPath string
 	Methods  []string
 
@@ -32,11 +32,18 @@ type APIInfo struct {
 }
 
 type ServiceInfo struct {
-	PathRouterInfoMap map[string]*APIInfo
+	ID                string
+	PathRouterInfoMap map[string]*HttpAPIInfoLocal
 	Host              string
 }
 
-func (s *ServiceInfo) GetAPIInfoByPath(fullPath string) *APIInfo {
+func (s *ServiceInfo) AddHttpAPIInfo(apiInfos []*HttpAPIInfoLocal) {
+	for _, apiInfo := range apiInfos {
+		s.PathRouterInfoMap[apiInfo.FullPath] = apiInfo
+	}
+}
+
+func (s *ServiceInfo) GetAPIInfoByPath(fullPath string) *HttpAPIInfoLocal {
 	apiInfo, ok := s.PathRouterInfoMap[fullPath]
 	if !ok {
 		return nil
@@ -45,26 +52,22 @@ func (s *ServiceInfo) GetAPIInfoByPath(fullPath string) *APIInfo {
 }
 
 type ServiceRouteHandler struct {
-	serviceIDInfoTable map[string]*ServiceInfo
+	serviceInfo *ServiceInfo
 }
 
-func NewServiceRouteHandler(serviceIDHostMap map[string]string) *ServiceRouteHandler {
+func (s *ServiceRouteHandler) AddHttpAPIInfo(apiInfos []*HttpAPIInfoLocal) {
+	s.serviceInfo.AddHttpAPIInfo(apiInfos)
+}
+
+func NewServiceRouteHandler(serviceID string, serviceHost string) *ServiceRouteHandler {
 	//TODO: ask real service to report its api
-	var serviceIDInfoMap = lo.MapValues(serviceIDHostMap, func(host string, serviceID string) *ServiceInfo {
-		return &ServiceInfo{
-			//PathRouterInfoMap: nil,
-			Host: host,
-		}
-	})
-	return &ServiceRouteHandler{serviceIDInfoTable: serviceIDInfoMap}
-}
-
-func (s *ServiceRouteHandler) GetServiceInfoByServiceID(serviceID string) *ServiceInfo {
-	serviceInfo, ok := s.serviceIDInfoTable[serviceID]
-	if !ok {
-		return nil
+	return &ServiceRouteHandler{
+		serviceInfo: &ServiceInfo{
+			ID:                serviceID,
+			PathRouterInfoMap: make(map[string]*HttpAPIInfoLocal),
+			Host:              serviceHost,
+		},
 	}
-	return serviceInfo
 }
 
 func (s *ServiceRouteHandler) HandleActive(ctx netty.ActiveContext) {
@@ -158,7 +161,7 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 				return
 			}
 			fmt.Println("[target] deploy id:", deployID, "service id:"+serviceID)
-			var targetServiceInfo = s.GetServiceInfoByServiceID(serviceID)
+			var targetServiceInfo = s.serviceInfo
 			if targetServiceInfo == nil {
 				//req.Host=ServiceIDDoesNotExist
 				proxyError = &StatusError{

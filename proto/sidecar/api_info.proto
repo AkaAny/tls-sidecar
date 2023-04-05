@@ -1,0 +1,12 @@
+syntax="proto3";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+package sidecar;
+
+option go_package="tls_sidecar/proto/sidecar";
+
+message HttpAPIInfo{
+  string FullPath=1;
+  repeated string Methods=2;
+  repeated string SupportedIdentityType=3;
+}

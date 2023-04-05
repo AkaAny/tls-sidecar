@@ -15,7 +15,7 @@ type RPCConfig struct {
 
 type InboundConfig struct {
 	TrustedDeployCertificates []*CertificateTypeAndValue
-	ServiceIDHostMap          map[string]string `mapstructure:"serviceIDHostMap"`
+	BackendServiceHost        string
 }
 
 type OutboundConfig struct {

@@ -11,11 +11,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
 	tls_sidecar "tls-sidecar"
+	"tls-sidecar/trust_center"
 )
 
 func Main(trustedDeployCerts []*x509.Certificate,
 	serviceCert *x509.Certificate, serviceKey *rsa.PrivateKey,
-	serviceIDHostMap map[string]string) {
+	serviceHost string) {
 	fmt.Println("sidecar inbound starts working")
 	var tlsCert = tls_sidecar.NewTLSCertificate(serviceKey, serviceCert)
 	//tlsCert, err := tls2.LoadX509KeyPair("rpc-service-company.crt", "rpc-service-company.key")
@@ -26,8 +27,11 @@ func Main(trustedDeployCerts []*x509.Certificate,
 	lo.ForEach(trustedDeployCerts, func(item *x509.Certificate, index int) {
 		caPool.AddCert(item)
 	})
-
-	var inboundRouterHandler = tls_sidecar.NewServiceRouteHandler(serviceIDHostMap)
+	serviceCertInfo, err := trust_center.NewServiceCertificate(serviceCert)
+	if err != nil {
+		panic(errors.Wrap(err, "invalid service certificate"))
+	}
+	var inboundRouterHandler = tls_sidecar.NewServiceRouteHandler(serviceCertInfo.ServiceID, serviceHost)
 
 	// child pipeline initializer.
 	setupCodec := func(channel netty.Channel) {

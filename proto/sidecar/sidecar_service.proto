@@ -1,0 +1,20 @@
+syntax="proto3";
+
+// buf:lint:ignore PACKAGE_DIRECTORY_MATCH
+package sidecar;
+
+import "proto/sidecar/api_info.proto";
+
+option go_package="tls_sidecar/proto/sidecar";
+
+message ReportHTTPAPIRequest{
+  repeated HttpAPIInfo api_infos=1;
+}
+
+message ReportHTTPAPIResponse{
+
+}
+
+service BackendToSidecarService{
+  rpc ReportHTTPAPI(ReportHTTPAPIRequest) returns (ReportHTTPAPIResponse);
+}
