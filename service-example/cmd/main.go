@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"os"
@@ -10,11 +9,10 @@ import (
 
 func main() {
 	var bindPort = 0
-	flag.IntVar(&bindPort, "bindPort", 0, "bind port")
-	flag.Parse()
-	if bindPort == 0 {
-		fmt.Println("try get bind port from env")
+	fmt.Println("try get bind port from env")
+	{
 		var bindPortStr = os.Getenv("BIND_PORT")
+		fmt.Println("bind port str:", bindPortStr)
 		bpl, err := strconv.ParseInt(bindPortStr, 10, 64)
 		if err != nil {
 			panic(err)
