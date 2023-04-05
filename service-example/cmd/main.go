@@ -14,7 +14,7 @@ func main() {
 	flag.Parse()
 	if bindPort == 0 {
 		fmt.Println("try get bind port from env")
-		var bindPortStr = os.Getenv("bindPort")
+		var bindPortStr = os.Getenv("BIND_PORT")
 		bpl, err := strconv.ParseInt(bindPortStr, 10, 64)
 		if err != nil {
 			panic(err)
