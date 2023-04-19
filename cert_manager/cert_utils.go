@@ -17,6 +17,15 @@ func ParseX509CertificateFromFile(fileName string) *x509.Certificate {
 	return cert
 }
 
+func ParseX509CertificateFromData(data []byte) *x509.Certificate {
+	var certDer = ReadSingleDerFromPEMData(data)
+	cert, err := x509.ParseCertificate(certDer)
+	if err != nil {
+		panic(err)
+	}
+	return cert
+}
+
 func ReadSingleDerFromPEMFile(fileName string) []byte {
 	fileData, err := os.ReadFile(fileName)
 	if err != nil {
@@ -39,6 +48,15 @@ func ParsePKCS8PEMPrivateKeyFromFile(fileName string) *rsa.PrivateKey {
 	return privateKeyObj.(*rsa.PrivateKey)
 }
 
+func ParsePKCS8PEMPrivateKeyFromData(fileData []byte) *rsa.PrivateKey {
+	var der = ReadSingleDerFromPEMData(fileData)
+	privateKeyObj, err := x509.ParsePKCS8PrivateKey(der)
+	if err != nil {
+		panic(err)
+	}
+	return privateKeyObj.(*rsa.PrivateKey)
+}
+
 func ParsePEMPrivateKeyFromFile(fileName string) *rsa.PrivateKey {
 	var der = ReadSingleDerFromPEMFile(fileName)
 	privateKey, err := x509.ParsePKCS1PrivateKey(der)
@@ -48,8 +66,11 @@ func ParsePEMPrivateKeyFromFile(fileName string) *rsa.PrivateKey {
 	return privateKey
 }
 
-func MarshalRSAPrivateKeyUsingPEM(privateKey *rsa.PrivateKey) (pemData []byte) {
-	der := x509.MarshalPKCS1PrivateKey(privateKey)
+func MarshalRSAPrivateKeyUsingPKCS8PEM(privateKey *rsa.PrivateKey) (pemData []byte) {
+	der, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		panic(err)
+	}
 	keyPem := &pem.Block{
 		Type:  "PRIVATE KEY",
 		Bytes: der,
