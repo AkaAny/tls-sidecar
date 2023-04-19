@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"os"
@@ -28,6 +29,13 @@ func main() {
 	var engine = gin.Default()
 	engine.NoRoute(func(c *gin.Context) {
 		fmt.Println(c.Request)
+		identJsonData, err := json.MarshalIndent(c.Request.Header, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(identJsonData))
+		var certHeaderValue = c.Request.Header.Get("ssl-client-cert")
+		fmt.Println("cert header value:", certHeaderValue)
 	})
 	err := engine.Run(fmt.Sprintf(":%d", bindPort))
 	if err != nil {
