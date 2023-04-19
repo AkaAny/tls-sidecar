@@ -109,7 +109,7 @@ func (t *TLSWrapperHandler) HandleWrite(ctx netty.OutboundContext, message netty
 			var deployInfo = t.GetDeployInfo(targetDeployID)
 			if deployInfo == nil {
 				proxyError = &StatusError{
-					error:      errors.Errorf("deploy id:%s does not exist"),
+					error:      errors.Errorf("deploy id:%s does not exist", targetDeployID),
 					StatusCode: http.StatusNotFound,
 					ErrorCode:  ErrCodeTargetDeployIDNotFound,
 				}
