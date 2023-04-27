@@ -52,9 +52,9 @@ func (x RSAPrivateKeyTypeAndValue) ReadAndParse() *rsa.PrivateKey {
 	var super = TypeAndValue(x)
 	var rawData = super.ReadRawData()
 	var der = cert_manager.ReadSingleDerFromPEMData(rawData)
-	privateKey, err := x509.ParsePKCS1PrivateKey(der)
+	privateKeyObj, err := x509.ParsePKCS8PrivateKey(der)
 	if err != nil {
 		panic(errors.Wrap(err, "err parse pkcs1 rsa private key from der"))
 	}
-	return privateKey
+	return privateKeyObj.(*rsa.PrivateKey)
 }
