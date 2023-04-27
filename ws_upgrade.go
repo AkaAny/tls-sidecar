@@ -10,6 +10,7 @@ import (
 	"github.com/samber/lo"
 	"net/http"
 	"nhooyr.io/websocket"
+	"tls-sidecar/trust_center"
 )
 
 type WSHandler struct {
@@ -68,9 +69,16 @@ func (h *WSHandler) handle() {
 	var tlsConnState = h.tlsConn.ConnectionState()
 	r.TLS = &tlsConnState
 	fmt.Println("http request:", r)
+	fmt.Println("request tls:", r.TLS)
+	var peerCert = r.TLS.PeerCertificates[0]
 	var responseWriter = NewResponseWriter(1, 1)
+	serviceCertInfo, err := trust_center.NewServiceCertificate(peerCert)
+	if err != nil {
+		responseWriter.Header().Set("X-Error", err.Error())
+	} else {
+		responseWriter.Header().Set("X-From-Service", serviceCertInfo.ServiceID)
+	}
 	responseWriter.Header().Set("X-Request-Url", r.URL.String())
-	responseWriter.Header().Set("X-From-Service", "sidecar")
 	responseWriter.Write([]byte("this is body"))
 	var httpResponse = responseWriter.Response()
 	err = httpResponse.Write(h.tlsConn)
