@@ -8,21 +8,24 @@ import (
 	"crypto/x509"
 	"fmt"
 	"github.com/pkg/errors"
-	"io"
 	"net/http"
 	"nhooyr.io/websocket"
 	"strings"
 )
 
 type WSClientParam struct {
-	SelfKey    *rsa.PrivateKey
-	SelfCert   *x509.Certificate
-	DeployCert *x509.Certificate
+	TargetWSURL string
+	SelfKey     *rsa.PrivateKey
+	SelfCert    *x509.Certificate
+	DeployCert  *x509.Certificate
 }
 
 func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, error) {
-
-	c, _, err := websocket.Dial(context.Background(), "ws://localhost:9090/tlsRequest", nil)
+	const defaultTargetWSUrl = "ws://localhost:9090/tlsRequest"
+	if param.TargetWSURL == "" {
+		param.TargetWSURL = defaultTargetWSUrl
+	}
+	c, _, err := websocket.Dial(context.Background(), param.TargetWSURL, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +69,7 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 		return nil, errors.Wrap(err, "read http response")
 	}
 	fmt.Println(response)
-	io.ReadAll(response.Body)
+	//io.ReadAll(response.Body)
 	//if err := netConn.Close(); err != nil {
 	//	panic(err)
 	//}
