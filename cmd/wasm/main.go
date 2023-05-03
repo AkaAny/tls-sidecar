@@ -3,7 +3,6 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -63,7 +62,7 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 		}
 	}()
 	var promise = wasm.NewPromise(func() (js.Value, error) {
-		resp, err := doTLSRequest(wsClientParam, method, url, httpHeader, bodyData)
+		resp, err := tls_sidecar.DoTLSRequest(wsClientParam, method, url, httpHeader, bodyData)
 		if err != nil {
 			return js.Value{}, errors.Wrap(err, "do tls request")
 		}
@@ -117,20 +116,6 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 	jsHttpResponse.Set("body", jsBodyObj)
 	jsHttpResponse.Set("bodyUsed", js.ValueOf(bodyObj.Consumed))
 	return jsHttpResponse
-}
-
-func doTLSRequest(clientParam tls_sidecar.WSClientParam,
-	method, url string, httpHeader http.Header, bodyData []byte) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, bytes.NewReader(bodyData))
-	if err != nil {
-		return nil, errors.Wrap(err, "new request")
-	}
-	req.Header = httpHeader
-	resp, err := tls_sidecar.NewWSClient(clientParam, req)
-	if err != nil {
-		return nil, errors.Wrap(err, "send ws data")
-	}
-	return resp, nil
 }
 
 func main() {

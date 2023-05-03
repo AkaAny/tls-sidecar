@@ -2,6 +2,7 @@ package tls_sidecar
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/rsa"
 	tls2 "crypto/tls"
@@ -74,4 +75,18 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 	//	panic(err)
 	//}
 	return response, nil
+}
+
+func DoTLSRequest(clientParam WSClientParam,
+	method, url string, httpHeader http.Header, bodyData []byte) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, bytes.NewReader(bodyData))
+	if err != nil {
+		return nil, errors.Wrap(err, "new request")
+	}
+	req.Header = httpHeader
+	resp, err := NewWSClient(clientParam, req)
+	if err != nil {
+		return nil, errors.Wrap(err, "send ws data")
+	}
+	return resp, nil
 }
