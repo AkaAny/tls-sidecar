@@ -36,9 +36,10 @@ func main() {
 	var serviceCert = sidecarConfig.RPC.BackendServiceCertificate.ReadAndParse()
 	var serviceKey = sidecarConfig.RPC.BackendServiceKey.ReadAndParse()
 	var wsHandler = tls_sidecar.WSHandler{
-		ServiceKey:       serviceKey,
-		ServiceCert:      serviceCert,
-		TrustDeployCerts: trustedDeployCerts,
+		ServiceKey:         serviceKey,
+		ServiceCert:        serviceCert,
+		TrustDeployCerts:   trustedDeployCerts,
+		BackendServiceHost: sidecarConfig.RPC.Inbound.BackendServiceHost,
 	}
 	var engine = gin.Default()
 	var defaultConfig = cors.DefaultConfig()
@@ -55,6 +56,7 @@ func main() {
 	engine.POST("/wrap", func(c *gin.Context) {
 		var targetMethod = c.GetHeader("X-Target-Method")
 		var targetPath = c.GetHeader("X-Target-Path")
+		var targetQuery = c.GetHeader("X-Target-Query")
 		var targetDeployID = c.GetHeader("X-Target-Deploy")
 		var targetServiceID = c.GetHeader("X-Target-Service")
 		deployHost, ok := sidecarConfig.RPC.Outbound.DeployIDHostMap[targetDeployID]
@@ -65,7 +67,7 @@ func main() {
 			return
 		}
 		var targetWSUrl = fmt.Sprintf("http://%s/%s/tlsRequest", deployHost, targetServiceID)
-		var realUrl = fmt.Sprintf("http://%s%s", targetServiceID, targetPath)
+		var realUrl = fmt.Sprintf("http://%s%s?%s", targetServiceID, targetPath, targetQuery)
 		req, err := http.NewRequest(targetMethod, realUrl, c.Request.Body)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -73,6 +75,7 @@ func main() {
 			})
 			return
 		}
+		req.Header = c.Request.Header
 		resp, err := tls_sidecar.NewWSClient(tls_sidecar.WSClientParam{
 			TargetWSURL: targetWSUrl,
 			SelfKey:     serviceKey,
