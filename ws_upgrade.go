@@ -7,6 +7,7 @@ import (
 	tls2 "crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/guonaihong/gout"
 	"github.com/samber/lo"
 	"net/http"
 	"nhooyr.io/websocket"
@@ -14,11 +15,12 @@ import (
 )
 
 type WSHandler struct {
-	ServiceKey        *rsa.PrivateKey
-	ServiceCert       *x509.Certificate
-	TrustDeployCerts  []*x509.Certificate
-	tlsConn           *tls2.Conn
-	bufferedTLSReader *bufio.Reader
+	ServiceKey         *rsa.PrivateKey
+	ServiceCert        *x509.Certificate
+	TrustDeployCerts   []*x509.Certificate
+	BackendServiceHost string
+	tlsConn            *tls2.Conn
+	bufferedTLSReader  *bufio.Reader
 }
 
 func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
@@ -76,12 +78,29 @@ func (h *WSHandler) handle() {
 	if err != nil {
 		responseWriter.Header().Set("X-Error", err.Error())
 	} else {
-		responseWriter.Header().Set("X-From-Service", serviceCertInfo.ServiceID)
+		r.Header.Set("X-From-Service", serviceCertInfo.ServiceID)
 	}
 	responseWriter.Header().Set("X-Request-Url", r.URL.String())
-	responseWriter.Write([]byte("this is body"))
-	var httpResponse = responseWriter.Response()
-	err = httpResponse.Write(h.tlsConn)
+	var (
+		method = r.Header.Get("X-Target-Method")
+		path   = r.Header.Get("X-Target-Path")
+		query  = r.Header.Get("X-Target-Query")
+	)
+	var realUrlStr = fmt.Sprintf("http://%s%s?%s", h.BackendServiceHost, path, query)
+	fmt.Println("to service real url:", realUrlStr)
+	//realUrl, err := url.Parse(realUrlStr)
+	//if err != nil {
+	//	responseWriter.Header().Set("X-Error", err.Error())
+	//	return
+	//}
+	resp, err := gout.New().SetMethod(method).SetURL(realUrlStr).SetHeader(r.Header).SetBody(r.Body).Response()
+	if err != nil {
+		responseWriter.Header().Set("X-Error", err.Error())
+		return
+	}
+	err = resp.Write(h.tlsConn)
+	//var httpResponse = responseWriter.Response()
+	//err = httpResponse.Write(h.tlsConn)
 	if err != nil {
 		panic(err)
 	}
