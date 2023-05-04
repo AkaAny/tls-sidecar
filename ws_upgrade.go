@@ -80,24 +80,27 @@ func (h *WSHandler) handle() {
 	} else {
 		r.Header.Set("X-From-Service", serviceCertInfo.ServiceID)
 	}
-	responseWriter.Header().Set("X-Request-Url", r.URL.String())
-	var (
-		method = r.Header.Get("X-Target-Method")
-		path   = r.Header.Get("X-Target-Path")
-		query  = r.Header.Get("X-Target-Query")
-	)
-	var realUrlStr = fmt.Sprintf("http://%s%s?%s", h.BackendServiceHost, path, query)
-	fmt.Println("to service real url:", realUrlStr)
+	//var (
+	//	method = r.Header.Get("X-Target-Method")
+	//	path   = r.Header.Get("X-Target-Path")
+	//	query  = r.Header.Get("X-Target-Query")
+	//)
+	//var realUrlStr = fmt.Sprintf("http://%s%s?%s", h.BackendServiceHost, path, query)
+	//fmt.Println("to service real url:", realUrlStr)
+
 	//realUrl, err := url.Parse(realUrlStr)
 	//if err != nil {
 	//	responseWriter.Header().Set("X-Error", err.Error())
 	//	return
 	//}
-	resp, err := gout.New().SetMethod(method).SetURL(realUrlStr).SetHeader(r.Header).SetBody(r.Body).Response()
+	r.URL.Scheme = "http"
+	r.URL.Host = h.BackendServiceHost
+	r.RequestURI = "" //can't be set in client requests
+	resp, err := gout.New().SetRequest(r).Response()
 	if err != nil {
-		responseWriter.Header().Set("X-Error", err.Error())
-		return
+		panic(err)
 	}
+	resp.Header.Set("X-Request-Url", r.URL.String())
 	err = resp.Write(h.tlsConn)
 	//var httpResponse = responseWriter.Response()
 	//err = httpResponse.Write(h.tlsConn)
