@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	tls2 "crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"github.com/guonaihong/gout"
 	"github.com/samber/lo"
@@ -73,12 +74,16 @@ func (h *WSHandler) handle() {
 	fmt.Println("http request:", r)
 	fmt.Println("request tls:", r.TLS)
 	var peerCert = r.TLS.PeerCertificates[0]
-	var responseWriter = NewResponseWriter(1, 1)
-	serviceCertInfo, err := trust_center.NewServiceCertificate(peerCert)
+	var peerCertDERB64 = base64.StdEncoding.EncodeToString(peerCert.Raw)
+	r.Header.Set("SSL-Client-Cert", peerCertDERB64)
+	//var responseWriter = NewResponseWriter(1, 1)
+	var rpcIdentityHandler = new(trust_center.RPCIdentityHandler)
+	identityHttpHeader, err := rpcIdentityHandler.HandleIdentity(r, peerCert)
 	if err != nil {
-		responseWriter.Header().Set("X-Error", err.Error())
-	} else {
-		r.Header.Set("X-From-Service", serviceCertInfo.ServiceID)
+		panic(err)
+	}
+	for headerKey, values := range identityHttpHeader {
+		r.Header[headerKey] = values
 	}
 	//var (
 	//	method = r.Header.Get("X-Target-Method")

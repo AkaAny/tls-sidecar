@@ -18,7 +18,6 @@ import (
 
 const (
 	ServiceIDDoesNotExist         = "service-404"
-	IdentityTypeHeaderKey         = "X-Identity-Type"
 	IdentityTypeValueUnauthorized = "unauthorized"
 	FromDeployIDHeaderKey         = "X-From-Deploy-ID"
 	FromServiceIDHeaderKey        = "X-From-Service-ID"
@@ -246,7 +245,7 @@ func (s *ServiceRouteHandler) HandleWrite(ctx netty.OutboundContext, message net
 				claimsJsonRawData, _ := json.Marshal(mapClaims)
 				req.Header.Set("X-Auth-Claims", string(claimsJsonRawData))
 			default:
-				req.Header.Set(IdentityTypeHeaderKey, IdentityTypeValueUnauthorized)
+				req.Header.Set(trust_center.IdentityTypeHeaderKey, IdentityTypeValueUnauthorized)
 			}
 		},
 		Transport: NewProxyRoundTripper(http.DefaultTransport,

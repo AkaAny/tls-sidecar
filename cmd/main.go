@@ -13,6 +13,7 @@ import (
 	"os"
 	tls_sidecar "tls-sidecar"
 	"tls-sidecar/config"
+	"tls-sidecar/trust_center"
 )
 
 func main() {
@@ -76,6 +77,7 @@ func main() {
 			return
 		}
 		req.Header = c.Request.Header
+		req.Header.Set(trust_center.IdentityTypeHeaderKey, trust_center.IdentityTypeCertRPC)
 		resp, err := tls_sidecar.NewWSClient(tls_sidecar.WSClientParam{
 			TargetWSURL: targetWSUrl,
 			SelfKey:     serviceKey,
