@@ -82,7 +82,7 @@ func main() {
 			TargetWSURL: targetWSUrl,
 			SelfKey:     serviceKey,
 			SelfCert:    serviceCert,
-			DeployCert:  trustedDeployCerts[0],
+			ParentCert:  trustedDeployCerts[0],
 		}, req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{

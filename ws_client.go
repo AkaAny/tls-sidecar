@@ -18,7 +18,7 @@ type WSClientParam struct {
 	TargetWSURL string
 	SelfKey     *rsa.PrivateKey
 	SelfCert    *x509.Certificate
-	DeployCert  *x509.Certificate
+	ParentCert  *x509.Certificate //对于服务是deploy，对于用户是staff ca
 }
 
 func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, error) {
@@ -38,7 +38,7 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 
 	var caPool = x509.NewCertPool()
 	//caPool.AddCert(rootCACert)
-	caPool.AddCert(param.DeployCert)
+	caPool.AddCert(param.ParentCert)
 
 	var tlsConfig = &tls2.Config{
 		Certificates: []tls2.Certificate{

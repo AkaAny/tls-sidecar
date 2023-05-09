@@ -14,15 +14,6 @@ import (
 	"tls-sidecar/wasm"
 )
 
-//go:embed deploy-hdu.crt
-var deployCertData []byte
-
-//go:embed rpc-service-company.crt
-var serviceCertData []byte
-
-//go:embed rpc-service-company.key
-var serviceKeyData []byte
-
 func copyFromUInt8Array(arrayJSObj js.Value) []byte {
 	var byteLength = arrayJSObj.Get("byteLength").Int()
 	var bodyData = make([]byte, byteLength)
@@ -53,12 +44,12 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 		var selfKeyData = copyFromUInt8Array(selfKeyDataJSObj)
 		var selfCertDataJSObj = tlsJSObj.Get("selfCert")
 		var selfCertData = copyFromUInt8Array(selfCertDataJSObj)
-		var deployCertDataJSObj = tlsJSObj.Get("deployCert")
-		var deployCertData = copyFromUInt8Array(deployCertDataJSObj)
+		var parentCertDataJSObj = tlsJSObj.Get("parentCert")
+		var parentCertData = copyFromUInt8Array(parentCertDataJSObj)
 		return tls_sidecar.WSClientParam{
 			SelfKey:    cert_manager.ParsePKCS8PEMPrivateKeyFromData(selfKeyData),
 			SelfCert:   cert_manager.ParseX509CertificateFromData(selfCertData),
-			DeployCert: cert_manager.ParseX509CertificateFromData(deployCertData),
+			ParentCert: cert_manager.ParseX509CertificateFromData(parentCertData),
 		}
 	}()
 	var promise = wasm.NewPromise(func() (js.Value, error) {
@@ -119,17 +110,6 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 }
 
 func main() {
-	fmt.Println(deployCertData)
-	//tls_sidecar.NewWSClient()
-	var deployCert = cert_manager.ParseX509CertificateFromData(deployCertData)
-	var serviceCert = cert_manager.ParseX509CertificateFromData(serviceCertData)
-	var serviceKey = cert_manager.ParsePKCS8PEMPrivateKeyFromData(serviceKeyData)
-	tls_sidecar.NewWSClient(tls_sidecar.WSClientParam{
-		SelfKey:    serviceKey,
-		SelfCert:   serviceCert,
-		DeployCert: deployCert,
-	}, nil)
-	fmt.Println("response")
 	js.Global().Set("tlsRequest", js.FuncOf(TLSRequest))
 	js.Global().Set("ready", js.ValueOf(true))
 	var c = make(chan int)
