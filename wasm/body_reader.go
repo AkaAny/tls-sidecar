@@ -11,7 +11,7 @@ type ReadableStream struct {
 }
 
 func (r *ReadableStream) ReadJS(this js.Value, args []js.Value) interface{} {
-	return NewPromise(func() (js.Value, error) {
+	return NewGoroutinePromise(func() (js.Value, error) {
 		var resultObj = NewObject()
 		resultObj.Set("done", js.ValueOf(true))
 		rawData, err := ReadAndClose(r.ReadCloser)

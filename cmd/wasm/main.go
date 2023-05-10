@@ -43,19 +43,19 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 		var targetWSURLJSObj = tlsJSObj.Get("targetWSURL")
 		var targetWSURL = targetWSURLJSObj.String()
 		var selfKeyDataJSObj = tlsJSObj.Get("selfKey")
-		var selfKeyData = copyFromUInt8Array(selfKeyDataJSObj)
+		var selfKeyData = selfKeyDataJSObj.String()
 		var selfCertDataJSObj = tlsJSObj.Get("selfCert")
-		var selfCertData = copyFromUInt8Array(selfCertDataJSObj)
+		var selfCertData = selfCertDataJSObj.String()
 		var parentCertDataJSObj = tlsJSObj.Get("parentCert")
-		var parentCertData = copyFromUInt8Array(parentCertDataJSObj)
+		var parentCertData = parentCertDataJSObj.String()
 		return tls_sidecar.WSClientParam{
 			TargetWSURL: targetWSURL,
-			SelfKey:     cert_manager.ParsePKCS8PEMPrivateKeyFromData(selfKeyData),
-			SelfCert:    cert_manager.ParseX509CertificateFromData(selfCertData),
-			ParentCert:  cert_manager.ParseX509CertificateFromData(parentCertData),
+			SelfKey:     cert_manager.ParsePKCS8PEMPrivateKeyFromData([]byte(selfKeyData)),
+			SelfCert:    cert_manager.ParseX509CertificateFromData([]byte(selfCertData)),
+			ParentCert:  cert_manager.ParseX509CertificateFromData([]byte(parentCertData)),
 		}
 	}()
-	var promise = wasm.NewPromise(func() (js.Value, error) {
+	var promise = wasm.NewGoroutinePromise(func() (js.Value, error) {
 		resp, err := tls_sidecar.DoTLSRequest(wsClientParam, method, url, httpHeader, bodyData)
 		if err != nil {
 			return js.Value{}, errors.Wrap(err, "do tls request")
@@ -78,7 +78,7 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 		ReadCloser: resp.Body,
 		Consumed:   false,
 	}
-	jsHttpResponse.Set("arrayBuffer", wasm.NewPromise(func() (js.Value, error) {
+	jsHttpResponse.Set("arrayBuffer", wasm.NewGoroutinePromise(func() (js.Value, error) {
 		rawData, err := wasm.ReadAndClose(resp.Body)
 		if err != nil {
 			return js.Value{}, err
@@ -86,7 +86,7 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 		var rawDataJSArray = wasm.NewUint8Array(rawData)
 		return rawDataJSArray, nil
 	}))
-	jsHttpResponse.Set("text", wasm.NewPromise(func() (js.Value, error) {
+	jsHttpResponse.Set("text", wasm.NewGoroutinePromise(func() (js.Value, error) {
 		rawData, err := wasm.ReadAndClose(resp.Body)
 		if err != nil {
 			return js.Value{}, err
@@ -94,7 +94,7 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 		var dataStr = string(rawData)
 		return js.ValueOf(dataStr), nil
 	}))
-	jsHttpResponse.Set("json", wasm.NewPromise(func() (js.Value, error) {
+	jsHttpResponse.Set("json", wasm.NewGoroutinePromise(func() (js.Value, error) {
 		rawData, err := wasm.ReadAndClose(resp.Body)
 		if err != nil {
 			return js.Value{}, err
