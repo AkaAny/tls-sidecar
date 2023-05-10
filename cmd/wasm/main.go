@@ -110,8 +110,9 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 }
 
 func main() {
-	js.Global().Set("tlsRequest", js.FuncOf(TLSRequest))
-	js.Global().Set("ready", js.ValueOf(true))
+	var requestWASMObj = js.Global().Get("Object").New()
+	requestWASMObj.Set("tlsRequest", js.FuncOf(TLSRequest))
+	js.Global().Set("RequestWASM", requestWASMObj)
 	var c = make(chan int)
 	<-c
 }
