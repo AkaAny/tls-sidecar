@@ -40,6 +40,8 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 	var bodyData = copyFromUInt8Array(bodyUnit8Array)
 	var tlsJSObj = requestInfoJSObject.Get("tls")
 	var wsClientParam = func() tls_sidecar.WSClientParam {
+		var targetWSURLJSObj = tlsJSObj.Get("targetWSURL")
+		var targetWSURL = targetWSURLJSObj.String()
 		var selfKeyDataJSObj = tlsJSObj.Get("selfKey")
 		var selfKeyData = copyFromUInt8Array(selfKeyDataJSObj)
 		var selfCertDataJSObj = tlsJSObj.Get("selfCert")
@@ -47,9 +49,10 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 		var parentCertDataJSObj = tlsJSObj.Get("parentCert")
 		var parentCertData = copyFromUInt8Array(parentCertDataJSObj)
 		return tls_sidecar.WSClientParam{
-			SelfKey:    cert_manager.ParsePKCS8PEMPrivateKeyFromData(selfKeyData),
-			SelfCert:   cert_manager.ParseX509CertificateFromData(selfCertData),
-			ParentCert: cert_manager.ParseX509CertificateFromData(parentCertData),
+			TargetWSURL: targetWSURL,
+			SelfKey:     cert_manager.ParsePKCS8PEMPrivateKeyFromData(selfKeyData),
+			SelfCert:    cert_manager.ParseX509CertificateFromData(selfCertData),
+			ParentCert:  cert_manager.ParseX509CertificateFromData(parentCertData),
 		}
 	}()
 	var promise = wasm.NewPromise(func() (js.Value, error) {
