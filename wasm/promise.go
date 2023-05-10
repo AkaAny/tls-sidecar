@@ -12,9 +12,8 @@ func NewGoroutinePromise(actionFunc func() (js.Value, error)) js.Value {
 		go func() {
 			res, err := actionFunc()
 			if err != nil {
-				reject.Invoke(js.Error{
-					Value: js.ValueOf(err.Error()),
-				})
+				var errJSObj = js.Global().Get("Error").New(err.Error())
+				reject.Invoke(errJSObj)
 				return
 			}
 			resolve.Invoke(res)
