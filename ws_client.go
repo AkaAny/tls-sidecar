@@ -79,6 +79,7 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 
 func DoTLSRequest(clientParam WSClientParam,
 	method, url string, httpHeader http.Header, bodyData []byte) (*http.Response, error) {
+	fmt.Println("request body data:", len(bodyData), string(bodyData))
 	req, err := http.NewRequest(method, url, bytes.NewReader(bodyData))
 	if err != nil {
 		return nil, errors.Wrap(err, "new request")
