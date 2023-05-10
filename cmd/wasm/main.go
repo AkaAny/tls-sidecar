@@ -24,7 +24,7 @@ func copyFromUInt8Array(arrayJSObj js.Value) []byte {
 func TLSRequest(this js.Value, args []js.Value) interface{} {
 	var url = args[0].String()
 	fmt.Println("url:", url)
-	var requestInfoJSObject = args[0]
+	var requestInfoJSObject = args[1]
 	var method = requestInfoJSObject.Get("method").String()
 	fmt.Println("method:", method)
 	var headersJSObj = requestInfoJSObject.Get("headers")
