@@ -67,7 +67,7 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 
 func wrapHttpResponse(resp *http.Response) js.Value {
 	var jsHttpResponse = js.Global().Get("Object").New()
-	jsHttpResponse.Set("url", resp.Request.URL)
+	jsHttpResponse.Set("url", resp.Request.URL.String())
 	jsHttpResponse.Set("ok", func() js.Value {
 		var isOK = resp.StatusCode >= 200 && resp.StatusCode <= 299
 		return js.ValueOf(isOK)
