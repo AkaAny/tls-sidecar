@@ -78,32 +78,38 @@ func wrapHttpResponse(resp *http.Response) js.Value {
 		ReadCloser: resp.Body,
 		Consumed:   false,
 	}
-	jsHttpResponse.Set("arrayBuffer", wasm.NewGoroutinePromise(func() (js.Value, error) {
-		rawData, err := wasm.ReadAndClose(resp.Body)
-		if err != nil {
-			return js.Value{}, err
-		}
-		var rawDataJSArray = wasm.NewUint8Array(rawData)
-		return rawDataJSArray, nil
+	jsHttpResponse.Set("arrayBuffer", js.FuncOf(func(this js.Value, args []js.Value) any {
+		return wasm.NewGoroutinePromise(func() (js.Value, error) {
+			rawData, err := wasm.ReadAndClose(resp.Body)
+			if err != nil {
+				return js.Value{}, err
+			}
+			var rawDataJSArray = wasm.NewUint8Array(rawData)
+			return rawDataJSArray, nil
+		})
 	}))
-	jsHttpResponse.Set("text", wasm.NewGoroutinePromise(func() (js.Value, error) {
-		rawData, err := wasm.ReadAndClose(resp.Body)
-		if err != nil {
-			return js.Value{}, err
-		}
-		var dataStr = string(rawData)
-		return js.ValueOf(dataStr), nil
+	jsHttpResponse.Set("text", js.FuncOf(func(this js.Value, args []js.Value) any {
+		return wasm.NewGoroutinePromise(func() (js.Value, error) {
+			rawData, err := wasm.ReadAndClose(resp.Body)
+			if err != nil {
+				return js.Value{}, err
+			}
+			var dataStr = string(rawData)
+			return js.ValueOf(dataStr), nil
+		})
 	}))
-	jsHttpResponse.Set("json", wasm.NewGoroutinePromise(func() (js.Value, error) {
-		rawData, err := wasm.ReadAndClose(resp.Body)
-		if err != nil {
-			return js.Value{}, err
-		}
-		var dataMap = make(map[string]interface{})
-		if err := json.Unmarshal(rawData, &dataMap); err != nil {
-			return js.Value{}, fmt.Errorf("unmarshal json")
-		}
-		return js.ValueOf(dataMap), nil
+	jsHttpResponse.Set("json", js.FuncOf(func(this js.Value, args []js.Value) any {
+		return wasm.NewGoroutinePromise(func() (js.Value, error) {
+			rawData, err := wasm.ReadAndClose(resp.Body)
+			if err != nil {
+				return js.Value{}, err
+			}
+			var dataMap = make(map[string]interface{})
+			if err := json.Unmarshal(rawData, &dataMap); err != nil {
+				return js.Value{}, fmt.Errorf("unmarshal json")
+			}
+			return js.ValueOf(dataMap), nil
+		})
 	}))
 	//wrap body
 
