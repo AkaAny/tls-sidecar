@@ -1,12 +1,13 @@
 package config
 
+import "tls-sidecar/config/pkg"
+
 type SidecarConfig struct {
-	RPC *RPCConfig `mapstructure:"rpc"`
+	Config *pkg.ConfigPluginConfig
+	RPC    *RPCConfig `mapstructure:"rpc"`
 }
 
 type RPCConfig struct {
-	RPCCACertificate *CertificateTypeAndValue `mapstructure:"rpcCACertificate"`
-
 	BackendServiceKey         *RSAPrivateKeyTypeAndValue
 	BackendServiceCertificate *CertificateTypeAndValue
 	Inbound                   *InboundConfig
