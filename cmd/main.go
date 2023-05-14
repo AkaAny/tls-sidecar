@@ -11,16 +11,16 @@ import (
 	"net/http"
 	tls_sidecar "tls-sidecar"
 	"tls-sidecar/config"
-	"tls-sidecar/config/pkg"
-	"tls-sidecar/config/pkg/k8s_configmap"
-	"tls-sidecar/config/pkg/k8s_secret"
+	"tls-sidecar/config/pkg/config_tv"
+	"tls-sidecar/config/pkg/config_tv/k8s_configmap"
+	"tls-sidecar/config/pkg/config_tv/k8s_secret"
 	"tls-sidecar/trust_center"
 )
 
 func main() {
 	fmt.Println("sidecar starts working")
-	var configPluginConfig = pkg.GetConfigPluginConfigFromEnv()
-	var pluginMap = make(pkg.TypePluginMap)
+	var configPluginConfig = config_tv.GetConfigPluginConfigFromEnv()
+	var pluginMap = make(config_tv.TypePluginMap)
 	{
 		var pluginConfigMap = configPluginConfig.Plugin[k8s_secret.PluginName]
 		var k8sSecretTypeKVPlugin = k8s_secret.NewK8sSecretPluginFromConfig(pluginConfigMap)
@@ -33,7 +33,7 @@ func main() {
 	}
 	var mainConfig = new(config.SidecarConfig)
 	{
-		pkg.GetAndUnmarshalMainConfigFromEnv(mainConfig, pluginMap)
+		config_tv.GetAndUnmarshalMainConfigFromEnv(mainConfig, pluginMap)
 	}
 	var trustedDeployCerts = lo.Map(mainConfig.RPC.Inbound.TrustedDeployCertificates,
 		func(item *config.CertificateTypeAndValue, index int) *x509.Certificate {

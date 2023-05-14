@@ -1,9 +1,11 @@
 package config
 
-import "tls-sidecar/config/pkg"
+import (
+	"tls-sidecar/config/pkg/config_tv"
+)
 
 type SidecarConfig struct {
-	Config *pkg.ConfigPluginConfig
+	Config *config_tv.ConfigPluginConfig
 	RPC    *RPCConfig `mapstructure:"rpc"`
 }
 

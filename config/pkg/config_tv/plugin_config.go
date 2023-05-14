@@ -1,4 +1,4 @@
-package pkg
+package config_tv
 
 import (
 	"github.com/mitchellh/mapstructure"

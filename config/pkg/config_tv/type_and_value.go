@@ -1,4 +1,4 @@
-package pkg
+package config_tv
 
 import (
 	"encoding/json"

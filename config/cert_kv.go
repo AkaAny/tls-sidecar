@@ -5,7 +5,7 @@ import (
 	"crypto/x509"
 	"github.com/pkg/errors"
 	"tls-sidecar/cert_manager"
-	"tls-sidecar/config/pkg"
+	"tls-sidecar/config/pkg/config_tv"
 )
 
 const (
@@ -13,10 +13,10 @@ const (
 	TypeEmbed = "embed"
 )
 
-type CertificateTypeAndValue pkg.TypeAndValue
+type CertificateTypeAndValue config_tv.TypeAndValue
 
-func (x CertificateTypeAndValue) ReadAndParse(pluginMap pkg.TypePluginMap) *x509.Certificate {
-	var super = pkg.TypeAndValue(x)
+func (x CertificateTypeAndValue) ReadAndParse(pluginMap config_tv.TypePluginMap) *x509.Certificate {
+	var super = config_tv.TypeAndValue(x)
 	var rawData = super.ReadRawData(pluginMap)
 	var der = cert_manager.ReadSingleDerFromPEMData(rawData)
 	cert, err := x509.ParseCertificate(der)
@@ -26,10 +26,10 @@ func (x CertificateTypeAndValue) ReadAndParse(pluginMap pkg.TypePluginMap) *x509
 	return cert
 }
 
-type RSAPrivateKeyTypeAndValue pkg.TypeAndValue
+type RSAPrivateKeyTypeAndValue config_tv.TypeAndValue
 
-func (x RSAPrivateKeyTypeAndValue) ReadAndParse(pluginMap pkg.TypePluginMap) *rsa.PrivateKey {
-	var super = pkg.TypeAndValue(x)
+func (x RSAPrivateKeyTypeAndValue) ReadAndParse(pluginMap config_tv.TypePluginMap) *rsa.PrivateKey {
+	var super = config_tv.TypeAndValue(x)
 	var rawData = super.ReadRawData(pluginMap)
 	var der = cert_manager.ReadSingleDerFromPEMData(rawData)
 	privateKeyObj, err := x509.ParsePKCS8PrivateKey(der)
