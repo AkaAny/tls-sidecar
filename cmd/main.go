@@ -9,6 +9,8 @@ import (
 	"github.com/samber/lo"
 	"io"
 	"net/http"
+	"os"
+	"os/signal"
 	tls_sidecar "tls-sidecar"
 	"tls-sidecar/config"
 	"tls-sidecar/config/pkg/config_tv"
@@ -58,8 +60,13 @@ func main() {
 	engine.GET("/tlsRequest", func(c *gin.Context) {
 		wsHandler.Attach(c.Writer, c.Request)
 	})
-
-	engine.POST("/wrap", func(c *gin.Context) {
+	go func() {
+		if err := engine.Run(":9090"); err != nil {
+			panic(err)
+		}
+	}()
+	var wrapEngine = gin.Default()
+	wrapEngine.POST("/wrap", func(c *gin.Context) {
 		var targetMethod = c.GetHeader("X-Target-Method")
 		var targetPath = c.GetHeader("X-Target-Path")
 		var targetQuery = c.GetHeader("X-Target-Query")
@@ -114,9 +121,11 @@ func main() {
 		//	return
 		//}
 	})
-	if err := engine.Run(":9090"); err != nil {
-		panic(err)
-	}
+	go func() {
+		if err := wrapEngine.Run(":18080"); err != nil {
+			panic(err)
+		}
+	}()
 	//inbound.Main(trustedDeployCerts,
 	//	serviceCert, serviceKey,
 	//	mainConfig.RPC.Inbound.BackendServiceHost)
@@ -124,8 +133,8 @@ func main() {
 	//outbound.Main(selfDeployCert,
 	//	serviceCert, serviceKey,
 	//	mainConfig.RPC.Outbound.DeployIDHostMap)
-	//var sigChan = make(chan os.Signal)
-	//signal.Notify(sigChan, os.Interrupt)
-	//<-sigChan
+	var sigChan = make(chan os.Signal)
+	signal.Notify(sigChan, os.Interrupt)
+	<-sigChan
 	//fmt.Println("interrupted")
 }
