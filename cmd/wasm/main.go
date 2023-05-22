@@ -33,9 +33,16 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 	var httpHeader = make(http.Header)
 	for keyIndex := 0; keyIndex < headerKeysArray.Length(); keyIndex++ {
 		var headerKey = headerKeysArray.Index(keyIndex).String()
-		var headerValue = headersJSObj.Get(headerKey).Call("toString").String()
-		httpHeader.Set(headerKey, headerValue)
+		var headerValue = headersJSObj.Get(headerKey)
+		var headerValueStr = ""
+		if headerValue.Type() == js.TypeNumber {
+			headerValueStr = fmt.Sprintf("%d", headerValue.Int())
+		} else {
+			headerValueStr = headerValue.String()
+		}
+		httpHeader.Set(headerKey, headerValueStr)
 	}
+	fmt.Println("request http header:", httpHeader)
 	var bodyUnit8Array = requestInfoJSObject.Get("body")
 	var bodyData = copyFromUInt8Array(bodyUnit8Array)
 	var tlsJSObj = requestInfoJSObject.Get("tls")
