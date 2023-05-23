@@ -20,8 +20,6 @@ type WSHandler struct {
 	ServiceCert        *x509.Certificate
 	TrustDeployCerts   []*x509.Certificate
 	BackendServiceHost string
-	tlsConn            *tls2.Conn
-	bufferedTLSReader  *bufio.Reader
 }
 
 func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
@@ -58,18 +56,16 @@ func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(tlsConfig)
 	var tlsConn = tls2.Server(netConn, tlsConfig)
-	h.tlsConn = tlsConn
 	var bufferedTLSReader = bufio.NewReader(tlsConn)
-	h.bufferedTLSReader = bufferedTLSReader
-	h.handle() //handle one at a time
+	h.handle(tlsConn, bufferedTLSReader) //handle one at a time
 }
 
-func (h *WSHandler) handle() {
-	r, err := http.ReadRequest(h.bufferedTLSReader)
+func (h *WSHandler) handle(tlsConn *tls2.Conn, bufferedTLSReader *bufio.Reader) {
+	r, err := http.ReadRequest(bufferedTLSReader)
 	if err != nil {
 		panic(err)
 	}
-	var tlsConnState = h.tlsConn.ConnectionState()
+	var tlsConnState = tlsConn.ConnectionState()
 	r.TLS = &tlsConnState
 	fmt.Println("http request:", r)
 	fmt.Println("request tls:", r.TLS)
@@ -106,13 +102,13 @@ func (h *WSHandler) handle() {
 		panic(err)
 	}
 	resp.Header.Set("X-Request-Url", r.URL.String())
-	err = resp.Write(h.tlsConn)
+	err = resp.Write(tlsConn)
 	//var httpResponse = responseWriter.Response()
 	//err = httpResponse.Write(h.tlsConn)
 	if err != nil {
 		panic(err)
 	}
-	err = h.tlsConn.Close()
+	err = tlsConn.Close()
 	if err != nil {
 		panic(err)
 	}
