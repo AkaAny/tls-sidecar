@@ -48,11 +48,11 @@ func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
 		GetConfigForClient:    nil,
 		VerifyPeerCertificate: nil,
 		VerifyConnection:      nil,
-		RootCAs:               caPool,
-		ServerName:            "",
-		ClientAuth:            tls2.RequireAndVerifyClientCert, //tls2.RequireAndVerifyClientCert
-		ClientCAs:             caPool,
-		InsecureSkipVerify:    false,
+		//RootCAs:               caPool,
+		ServerName:         "",
+		ClientAuth:         tls2.RequireAndVerifyClientCert, //tls2.RequireAndVerifyClientCert
+		ClientCAs:          caPool,
+		InsecureSkipVerify: false,
 	}
 	fmt.Println(tlsConfig)
 	var tlsConn = tls2.Server(netConn, tlsConfig)
