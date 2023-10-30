@@ -4,10 +4,10 @@ import (
 	tls2 "crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"github.com/AkaAny/tls-sidecar/cert_manager"
 	"io"
 	"net/http"
 	"testing"
-	"tls-sidecar/cert_manager"
 )
 
 func TestSendRequest(t *testing.T) {

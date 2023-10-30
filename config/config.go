@@ -1,7 +1,7 @@
 package config
 
 import (
-	"tls-sidecar/config/pkg/config_tv"
+	"github.com/AkaAny/config-tv"
 )
 
 type SidecarConfig struct {

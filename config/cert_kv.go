@@ -3,9 +3,9 @@ package config
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"github.com/AkaAny/config-tv"
+	"github.com/AkaAny/tls-sidecar/cert_manager"
 	"github.com/pkg/errors"
-	"tls-sidecar/cert_manager"
-	"tls-sidecar/config/pkg/config_tv"
 )
 
 const (

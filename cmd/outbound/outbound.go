@@ -4,11 +4,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
+	tls_sidecar "github.com/AkaAny/tls-sidecar"
 	"github.com/go-netty/go-netty"
 	"github.com/go-netty/go-netty/codec/xhttp"
 	"github.com/go-netty/go-netty/transport/tcp"
 	"github.com/pkg/errors"
-	tls_sidecar "tls-sidecar"
 )
 
 func Main(selfDeployCert *x509.Certificate,

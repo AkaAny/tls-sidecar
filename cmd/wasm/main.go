@@ -6,12 +6,12 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	tls_sidecar "github.com/AkaAny/tls-sidecar"
+	"github.com/AkaAny/tls-sidecar/cert_manager"
+	"github.com/AkaAny/tls-sidecar/wasm"
 	"github.com/pkg/errors"
 	"net/http"
 	"syscall/js"
-	tls_sidecar "tls-sidecar"
-	"tls-sidecar/cert_manager"
-	"tls-sidecar/wasm"
 )
 
 func copyFromUInt8Array(arrayJSObj js.Value) []byte {

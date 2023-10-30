@@ -5,13 +5,13 @@ import (
 	tls2 "crypto/tls"
 	"crypto/x509"
 	"fmt"
+	tls_sidecar "github.com/AkaAny/tls-sidecar"
+	"github.com/AkaAny/tls-sidecar/trust_center"
 	"github.com/go-netty/go-netty"
 	"github.com/go-netty/go-netty-transport/tls"
 	"github.com/go-netty/go-netty/codec/xhttp"
 	"github.com/pkg/errors"
 	"github.com/samber/lo"
-	tls_sidecar "tls-sidecar"
-	"tls-sidecar/trust_center"
 )
 
 func Main(trustedDeployCerts []*x509.Certificate,
