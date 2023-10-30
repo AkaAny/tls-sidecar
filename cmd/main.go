@@ -3,6 +3,12 @@ package main
 import (
 	"crypto/x509"
 	"fmt"
+	config_tv "github.com/AkaAny/config-tv"
+	"github.com/AkaAny/config-tv/plugin/k8s_configmap"
+	"github.com/AkaAny/config-tv/plugin/k8s_secret"
+	tls_sidecar "github.com/AkaAny/tls-sidecar"
+	"github.com/AkaAny/tls-sidecar/config"
+	"github.com/AkaAny/tls-sidecar/trust_center"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -11,12 +17,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	tls_sidecar "tls-sidecar"
-	"tls-sidecar/config"
-	"tls-sidecar/config/pkg/config_tv"
-	"tls-sidecar/config/pkg/config_tv/k8s_configmap"
-	"tls-sidecar/config/pkg/config_tv/k8s_secret"
-	"tls-sidecar/trust_center"
 )
 
 func main() {
