@@ -8,11 +8,11 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"github.com/AkaAny/tls-sidecar/trust_center"
 	"github.com/guonaihong/gout"
 	"github.com/samber/lo"
 	"net/http"
 	"nhooyr.io/websocket"
-	"tls-sidecar/trust_center"
 )
 
 type WSHandler struct {

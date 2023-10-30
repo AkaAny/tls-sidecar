@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/AkaAny/tls-sidecar/trust_center"
 	"github.com/go-netty/go-netty"
 	"github.com/go-netty/go-netty/codec/xhttp"
 	"github.com/golang-jwt/jwt/v5"
@@ -13,7 +14,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
-	"tls-sidecar/trust_center"
 )
 
 const (
