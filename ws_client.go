@@ -55,6 +55,7 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 		InsecureSkipVerify: true,
 	}
 	var tlsConn = tls2.Client(netConn, tlsConfig)
+	defer tlsConn.Close()
 	if request == nil {
 		defaultRequest, err := http.NewRequest("POST", "http://localhost:9090/abc",
 			strings.NewReader("this is request body"))

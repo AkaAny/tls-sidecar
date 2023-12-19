@@ -113,8 +113,8 @@ func (h *WSHandler) handle(tlsConn *tls2.Conn, bufferedTLSReader *bufio.Reader) 
 	if err != nil {
 		panic(err)
 	}
-	err = tlsConn.Close()
-	if err != nil {
-		panic(err)
-	}
+	//err = tlsConn.CloseWrite()
+	//if err != nil {
+	//	panic(err)
+	//}
 }
