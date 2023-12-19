@@ -1,3 +1,5 @@
+//go:build !js
+
 package tls_sidecar
 
 import (
@@ -13,6 +15,7 @@ import (
 	"github.com/samber/lo"
 	"net/http"
 	"nhooyr.io/websocket"
+	"time"
 )
 
 type WSHandler struct {
@@ -29,7 +32,9 @@ func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	var netConn = websocket.NetConn(context.Background(), c, websocket.MessageBinary)
+	ctx, cancelFn := context.WithTimeout(r.Context(), 1*time.Minute)
+	defer cancelFn()
+	var netConn = websocket.NetConn(ctx, c, websocket.MessageBinary)
 
 	var tlsCert = NewTLSCertificate(h.ServiceKey, h.ServiceCert)
 

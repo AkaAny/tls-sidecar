@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"nhooyr.io/websocket"
 	"strings"
+	"time"
 )
 
 type WSClientParam struct {
@@ -31,8 +32,9 @@ func NewWSClient(param WSClientParam, request *http.Request) (*http.Response, er
 		panic(err)
 	}
 	//defer c.Close(websocket.StatusInternalError, "the sky is falling")
-
-	var netConn = websocket.NetConn(context.Background(), c, websocket.MessageBinary)
+	ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancelFn()
+	var netConn = websocket.NetConn(ctx, c, websocket.MessageBinary)
 
 	var tlsCert = NewTLSCertificate(param.SelfKey, param.SelfCert)
 
