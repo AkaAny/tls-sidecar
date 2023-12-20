@@ -27,7 +27,8 @@ type WSHandler struct {
 
 func (h *WSHandler) Attach(w http.ResponseWriter, r *http.Request) {
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{
-		OriginPatterns: []string{"*"},
+		OriginPatterns:  []string{"*"},
+		CompressionMode: websocket.CompressionDisabled,
 	})
 	if err != nil {
 		panic(err)
