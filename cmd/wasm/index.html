@@ -1,10 +1,61 @@
 <html>
-<script src="static/wasm_exec.js"></script>
-<script>
-    const go = new Go();
-    WebAssembly.instantiateStreaming(fetch("static/ws_client.wasm"), go.importObject)
-        .then((result) => go.run(result.instance));
-    console.log("after load wasm");
-</script>
+<head>
+    <script src="static/wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("static/request.wasm"), go.importObject)
+            .then((result) => go.run(result.instance));
+        console.log("after load wasm");
+        function fetchAndSetLocalStorage(url,key){
+            return fetch(url).then((response)=>{
+                return response.text();
+            }).then((text)=>{
+                localStorage.setItem(key,text);
+            })
+        }
+        fetchAndSetLocalStorage("test/deploy-hdu.crt","parentCertificate")
+        fetchAndSetLocalStorage("test/rpc-service-counselor.key","privateKey")
+        fetchAndSetLocalStorage("test/rpc-service-counselor.crt","certificate")
+
+        function str2ab(str) {
+            const encoder=new TextEncoder();
+            //const arrayBuffer=new ArrayBuffer(str.length);
+            const bufView = encoder.encode(str);
+            return bufView;
+        }
+
+        async function onClick(){
+            RequestWASM.tlsRequest("http://company/abc", {
+                tls: {
+                    serverBaseUrl: "http://localhost:9090",
+                    selfKey: localStorage.getItem("privateKey"),
+                    selfCert: localStorage.getItem("certificate"),
+                    parentCert: localStorage.getItem("parentCertificate"),
+                },
+                method: "POST",
+                headers: {
+                    "Content-Type":"application/json",
+                    "X-Custom-Header":"1",
+                },
+                body: str2ab(JSON.stringify({
+                    "field1":"value1",
+                })),
+            }).then((resp)=> {
+                console.log(resp);
+                return resp.text();
+            }).then((text)=>{
+                console.log(text);
+            })
+        }
+    </script>
+</head>
+
+<body>
+
+<div>
+    <button onclick="onClick()">call</button>
+</div>
+</body>
+
 
 </html>

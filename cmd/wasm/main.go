@@ -3,14 +3,18 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
 	"fmt"
 	tls_sidecar "github.com/AkaAny/tls-sidecar"
 	"github.com/AkaAny/tls-sidecar/cert_manager"
+	tls_on_http "github.com/AkaAny/tls-sidecar/http_handler"
 	"github.com/AkaAny/tls-sidecar/wasm"
+	"github.com/AkaAny/tls-sidecar/ws_handler"
 	"github.com/pkg/errors"
 	"net/http"
+	"net/url"
 	"syscall/js"
 )
 
@@ -21,9 +25,34 @@ func copyFromUInt8Array(arrayJSObj js.Value) []byte {
 	return bodyData
 }
 
+func parseTLSParamObject(tlsJSObj js.Value) (serverBaseUrl string, clientTLSConfigFactory *tls_sidecar.ClientTLSConfigFactory) {
+	var serverBaseUrlJSObj = tlsJSObj.Get("serverBaseUrl")
+	serverBaseUrl = serverBaseUrlJSObj.String()
+	var selfKeyDataJSObj = tlsJSObj.Get("selfKey")
+	var selfKeyData = selfKeyDataJSObj.String()
+	var selfCertDataJSObj = tlsJSObj.Get("selfCert")
+	var selfCertData = selfCertDataJSObj.String()
+	var parentCertDataJSObj = tlsJSObj.Get("parentCert")
+	var parentCertData = parentCertDataJSObj.String()
+	clientTLSConfigFactory = &tls_sidecar.ClientTLSConfigFactory{
+		SelfKey:    cert_manager.ParsePKCS8PEMPrivateKeyFromData([]byte(selfKeyData)),
+		SelfCert:   cert_manager.ParseX509CertificateFromData([]byte(selfCertData)),
+		ParentCert: cert_manager.ParseX509CertificateFromData([]byte(parentCertData)),
+	}
+	return
+}
+
+func parseUnderlyingProtocol(serverBaseUrl string) (underlyingProtocol string) {
+	serverBaseUri, err := url.Parse(serverBaseUrl)
+	if err != nil {
+		panic(errors.Wrap(err, "invalid server base url"))
+	}
+	return serverBaseUri.Scheme
+}
+
 func TLSRequest(this js.Value, args []js.Value) interface{} {
-	var url = args[0].String()
-	fmt.Println("url:", url)
+	var urlInRequest = args[0].String()
+	fmt.Println("url in request:", urlInRequest)
 	var requestInfoJSObject = args[1]
 	var method = requestInfoJSObject.Get("method").String()
 	fmt.Println("method:", method)
@@ -45,25 +74,36 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 	fmt.Println("request http header:", httpHeader)
 	var bodyUnit8Array = requestInfoJSObject.Get("body")
 	var bodyData = copyFromUInt8Array(bodyUnit8Array)
+	fmt.Println("request body data:", len(bodyData), string(bodyData))
+
+	req, err := http.NewRequest(method, urlInRequest, bytes.NewReader(bodyData))
+	if err != nil {
+		panic(errors.Wrap(err, "new request"))
+	}
+	req.Header = httpHeader
+
 	var tlsJSObj = requestInfoJSObject.Get("tls")
-	var wsClientParam = func() tls_sidecar.WSClientParam {
-		var targetWSURLJSObj = tlsJSObj.Get("targetWSURL")
-		var targetWSURL = targetWSURLJSObj.String()
-		var selfKeyDataJSObj = tlsJSObj.Get("selfKey")
-		var selfKeyData = selfKeyDataJSObj.String()
-		var selfCertDataJSObj = tlsJSObj.Get("selfCert")
-		var selfCertData = selfCertDataJSObj.String()
-		var parentCertDataJSObj = tlsJSObj.Get("parentCert")
-		var parentCertData = parentCertDataJSObj.String()
-		return tls_sidecar.WSClientParam{
-			TargetWSURL: targetWSURL,
-			SelfKey:     cert_manager.ParsePKCS8PEMPrivateKeyFromData([]byte(selfKeyData)),
-			SelfCert:    cert_manager.ParseX509CertificateFromData([]byte(selfCertData)),
-			ParentCert:  cert_manager.ParseX509CertificateFromData([]byte(parentCertData)),
-		}
-	}()
+	serverBaseUrl, clientTLSConfigFactory := parseTLSParamObject(tlsJSObj)
+	var underlyingProtocol = parseUnderlyingProtocol(serverBaseUrl)
 	var promise = wasm.NewGoroutinePromise(func() (js.Value, error) {
-		resp, err := tls_sidecar.DoTLSRequest(wsClientParam, method, url, httpHeader, bodyData)
+		var tlsConfig = clientTLSConfigFactory.NewClientConfig()
+		var (
+			resp *http.Response
+			err  error
+		)
+		switch underlyingProtocol {
+		case "ws":
+			fallthrough
+		case "wss":
+			resp, err = ws_handler.NewWSClient(serverBaseUrl, tlsConfig, req)
+			break
+		case "http":
+			serverBaseUrl += "/http"
+			resp, err = tls_on_http.NewHttpClient(serverBaseUrl, tlsConfig, req)
+			break
+		default:
+			panic(errors.Errorf("invalid underlying protocol:%s", underlyingProtocol))
+		}
 		if err != nil {
 			return js.Value{}, errors.Wrap(err, "do tls request")
 		}

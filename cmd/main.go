@@ -8,13 +8,11 @@ import (
 	"github.com/AkaAny/config-tv/plugin/k8s_secret"
 	tls_sidecar "github.com/AkaAny/tls-sidecar"
 	"github.com/AkaAny/tls-sidecar/config"
-	"github.com/AkaAny/tls-sidecar/trust_center"
+	tls_on_http "github.com/AkaAny/tls-sidecar/http_handler"
+	"github.com/AkaAny/tls-sidecar/ws_handler"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"github.com/samber/lo"
-	"io"
-	"net/http"
 	"os"
 	"os/signal"
 )
@@ -43,84 +41,59 @@ func main() {
 		})
 	var serviceCert = mainConfig.RPC.BackendServiceCertificate.ReadAndParse(pluginMap)
 	var serviceKey = mainConfig.RPC.BackendServiceKey.ReadAndParse(pluginMap)
-	var wsHandler = tls_sidecar.WSHandler{
-		ServiceKey:         serviceKey,
-		ServiceCert:        serviceCert,
-		TrustDeployCerts:   trustedDeployCerts,
-		BackendServiceHost: mainConfig.RPC.Inbound.BackendServiceHost,
-	}
 	var engine = gin.Default()
-	var defaultConfig = cors.DefaultConfig()
-	defaultConfig.AllowOriginFunc = func(origin string) bool {
-		fmt.Println("cors origin:", origin)
-		return true
+	var corsMiddleware = func() gin.HandlerFunc {
+		var defaultConfig = cors.DefaultConfig()
+		defaultConfig.AllowOriginFunc = func(origin string) bool {
+			return true
+		}
+		defaultConfig.AllowAllOrigins = false
+		defaultConfig.AllowWebSockets = true
+		defaultConfig.AddAllowHeaders("X-Connection-ID")
+		defaultConfig.AddExposeHeaders("X-Connection-ID")
+		return cors.New(defaultConfig)
+	}()
+	engine.Use(corsMiddleware)
+	var serverTLSConfigFactory = &tls_sidecar.ServerTLSConfigFactory{
+		SelfKey:          serviceKey,
+		SelfCert:         serviceCert,
+		TrustDeployCerts: trustedDeployCerts,
 	}
-	defaultConfig.AllowWebSockets = true
-	engine.Use(cors.New(defaultConfig))
-	engine.GET("/tlsRequest", func(c *gin.Context) {
-		wsHandler.Attach(c.Writer, c.Request)
-	})
+	var clientTLSConfigFactory = &tls_sidecar.ClientTLSConfigFactory{
+		SelfKey:    serviceKey,
+		SelfCert:   serviceCert,
+		ParentCert: trustedDeployCerts[0],
+	}
+	var websocketSidecarServer = &ws_handler.WebSocketSidecarServer{
+		ServerTLSConfigFactory: serverTLSConfigFactory,
+		ClientTLSConfigFactory: clientTLSConfigFactory,
+		DeployHostMap:          mainConfig.RPC.Outbound.DeployIDHostMap,
+		BackendServiceHost:     mainConfig.RPC.Inbound.BackendServiceHost,
+	}
+	var httpSidecarServer = &tls_on_http.HttpSidecarServer{
+		ServerTLSConfigFactory: serverTLSConfigFactory,
+		ClientTLSConfigFactory: clientTLSConfigFactory,
+		BackendServiceHost:     mainConfig.RPC.Inbound.BackendServiceHost,
+		DeployIDHostMap:        mainConfig.RPC.Outbound.DeployIDHostMap,
+	}
+	{
+		var wsGroup = engine.Group("/")
+		websocketSidecarServer.InitRequestRouter(wsGroup) //默认用ws协议，除非特别指定
+		var httpGroup = engine.Group("/http")
+		httpSidecarServer.InitRequestRouter(httpGroup)
+	}
 	go func() {
 		if err := engine.Run(":9090"); err != nil {
 			panic(err)
 		}
 	}()
 	var wrapEngine = gin.Default()
-	wrapEngine.POST("/wrap", func(c *gin.Context) {
-		var targetMethod = c.GetHeader("X-Target-Method")
-		var targetPath = c.GetHeader("X-Target-Path")
-		var targetQuery = c.GetHeader("X-Target-Query")
-		var targetDeployID = c.GetHeader("X-Target-Deploy")
-		var targetServiceID = c.GetHeader("X-Target-Service")
-		deployHost, ok := mainConfig.RPC.Outbound.DeployIDHostMap[targetDeployID]
-		if !ok {
-			c.JSON(http.StatusNotFound, gin.H{
-				"msg": errors.Errorf("deploy id:%s does not exist", targetDeployID).Error(),
-			})
-			return
-		}
-		var targetWSUrl = fmt.Sprintf("http://%s/%s/tlsRequest", deployHost, targetServiceID)
-		var realUrl = fmt.Sprintf("http://%s%s?%s", targetServiceID, targetPath, targetQuery)
-		req, err := http.NewRequest(targetMethod, realUrl, c.Request.Body)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"msg": errors.Wrap(err, "new http request").Error(),
-			})
-			return
-		}
-		req.Header = c.Request.Header
-		req.Header.Set(trust_center.IdentityTypeHeaderKey, trust_center.IdentityTypeCertRPC)
-		resp, err := tls_sidecar.NewWSClient(tls_sidecar.WSClientParam{
-			TargetWSURL: targetWSUrl,
-			SelfKey:     serviceKey,
-			SelfCert:    serviceCert,
-			ParentCert:  trustedDeployCerts[0],
-		}, req)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"msg": errors.Wrap(err, "do tls request").Error(),
-			})
-			return
-		}
-		for headerKey, headerValues := range resp.Header {
-			c.Writer.Header()[headerKey] = headerValues
-		}
-		defer resp.Body.Close()
-		respBodyData, err := io.ReadAll(resp.Body)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"msg": errors.Wrap(err, "read response body"),
-			})
-			return
-		}
-		c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBodyData)
-		//if _, err := c.Writer.Write(respBodyData); err != nil {
-		//	c.JSON(http.StatusInternalServerError, gin.H{
-		//		"msg": errors.Wrap(err, "write response body"),
-		//	})
-		//	return
-		//}
-	})
+	wrapEngine.Use(corsMiddleware)
+	{
+		websocketSidecarServer.InitWrapRouter(wrapEngine)
+		var httpGroup = wrapEngine.Group("/http")
+		httpSidecarServer.InitWrapRouter(httpGroup)
+	}
 	go func() {
 		if err := wrapEngine.Run(":18080"); err != nil {
 			panic(err)

@@ -10,12 +10,13 @@ require (
 	github.com/go-netty/go-netty-transport v0.0.0-20230223111310-bb33a4f3a56d
 	github.com/golang-jwt/jwt/v5 v5.0.0-rc.1
 	github.com/guonaihong/gout v0.3.7
+	github.com/jordwest/mock-conn v0.0.0-20180617021051-4896c6bd1641
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.38.1
 	github.com/spf13/viper v1.15.0
 	google.golang.org/grpc v1.52.0
 	google.golang.org/protobuf v1.28.1
-	nhooyr.io/websocket v1.8.7
+	nhooyr.io/websocket v1.8.10
 )
 
 require (
@@ -40,12 +41,10 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.10.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect

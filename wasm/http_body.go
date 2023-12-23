@@ -6,7 +6,6 @@ import (
 )
 
 func ReadAndClose(respBody io.ReadCloser) ([]byte, error) {
-	defer respBody.Close()
 	rawData, err := io.ReadAll(respBody)
 	if err != nil {
 		return nil, errors.Wrap(err, "read from go reader")
