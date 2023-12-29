@@ -2,11 +2,13 @@ package ws_handler
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
 	"github.com/AkaAny/tls-sidecar"
 	"github.com/pkg/errors"
+	"io"
 	"net/http"
 	"nhooyr.io/websocket"
 	"time"
@@ -29,7 +31,6 @@ func NewWSClient(serverBaseUrl string, tlsConfig *tls.Config, request *http.Requ
 	var netConn = websocket.NetConn(ctx, c, websocket.MessageBinary)
 
 	var tlsConn = tls.Client(netConn, tlsConfig)
-	defer tlsConn.Close()
 	if err := request.Write(tlsConn); err != nil {
 		panic(err)
 	}
@@ -40,9 +41,12 @@ func NewWSClient(serverBaseUrl string, tlsConfig *tls.Config, request *http.Requ
 		return nil, errors.Wrap(err, "read http response")
 	}
 	fmt.Println(response)
-	//io.ReadAll(response.Body)
-	//if err := netConn.Close(); err != nil {
-	//	panic(err)
-	//}
+	respBodyData, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "read response body")
+	}
+	var bodyReader = bytes.NewReader(respBodyData)
+	response.Body = io.NopCloser(bodyReader)
+	tlsConn.Close()
 	return response, nil
 }
