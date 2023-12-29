@@ -98,6 +98,8 @@ func TLSRequest(this js.Value, args []js.Value) interface{} {
 			resp, err = ws_handler.NewWSClient(serverBaseUrl, tlsConfig, req)
 			break
 		case "http":
+			fallthrough
+		case "https":
 			serverBaseUrl += "/http"
 			resp, err = tls_on_http.NewHttpClient(serverBaseUrl, tlsConfig, req)
 			break
