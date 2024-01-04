@@ -157,7 +157,7 @@ func (h *HttpSidecarServer) InitRequestRouter(engine gin.IRoutes) {
 			return
 		}
 		c.JSON(http.StatusOK, &ReadResponse{
-			Data: data,
+			Data: data[:n],
 			N:    n,
 			Err:  "",
 		})
